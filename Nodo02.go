@@ -65,13 +65,15 @@ func handle(datos []Data, con net.Conn){
 	r := bufio.NewReader(con)
 	respuesta, _ := r.ReadString('\n') //recibe la cadena concatenada del nodo01
 	resp := strings.Split(respuesta, ",")
-	val, err := strconv.ParseFloat(strings.ReplaceAll(resp[1],"\r\n",""), 64)
+
+	msg := strings.Split(resp[1], "\n") //quitamos el \n del dato
+
+	val, err := strconv.ParseFloat(strings.ReplaceAll(msg[0],"\r\n",""), 64)
 	if err != nil{
 		fmt.Println("Error: ", err)
 	}
 	result := regresion_lineal(datos, val) //aplica el algoritmo de Machine Learning para el segundo valor (horas)
-	resStr := strconv.FormatFloat(result, 'E', -1, 64) //convierte el resultado en string
-	fmt.Println(result)
+	resStr := fmt.Sprintf("%f", result) //convierte el resultado en string
 	resSend := resp[0] + "," + resStr //concatena los resultados formando el resultado final
 	send(resSend, con)
 }
@@ -105,10 +107,6 @@ func main(){
 		datos = append(datos, data)
 	}
 
-	// conn, _ := net.Dial("tcp", "localhost:9000")
-    // //defer conn.Close()
-
-	// Manejador(datos, conn)
 	ln, _ := net.Listen("tcp", "localhost:9002")
 	defer ln.Close()
 
@@ -119,8 +117,6 @@ func main(){
 }
 
 func send(result string, conn net.Conn) {
-	// conn, _ := net.Dial("tcp", "localhost:9002")
-    // defer conn.Close()
-    fmt.Print(result)
+    fmt.Print("Enviando ",result, "...")
     fmt.Fprintf(conn, "%d\n", result) //envia el resultado final al nodo01
 }
