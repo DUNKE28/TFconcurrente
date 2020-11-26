@@ -64,6 +64,7 @@ func handle(datos []Data, con net.Conn){
 	
 	defer con.Close()
 	r := bufio.NewReader(con)
+	
 	respuesta, _ := r.ReadString('\n') //Recibe los datos del usuario desde el API
 	resp := strings.Split(respuesta, ",")
 	val, err := strconv.ParseFloat(strings.ReplaceAll(resp[0],"\r\n",""), 64)
@@ -71,11 +72,13 @@ func handle(datos []Data, con net.Conn){
 		fmt.Println("Error: ", err)
 	}
 	result := regresion_lineal(datos, val) //aplica el algoritmo de Machine Learning para el primer dato (altura)
-	resStr := strconv.FormatFloat(result, 'E', -1, 64) //convierte el resultado en string
-	fmt.Println(resStr)
+	resStr := fmt.Sprintf("%f", result) //convierte el resultado en string
+	fmt.Println("Enviando ",resStr, " a nodo02...")
+
 	resSend := resStr + "," + resp[1] //concatena los strings
 
 	completeResult := send(resSend)
+	fmt.Print("Enviando ",completeResult, "...")
 	fmt.Fprintf(con, "%d\n", completeResult) //envia todo el resultado final en un string al API
 }
 
@@ -108,10 +111,6 @@ func main(){
 		datos = append(datos, data)
 	}
 
-	// conn, _ := net.Dial("tcp", "localhost:9000")
-    // //defer conn.Close()
-
-	// Manejador(datos, conn)
 	ln, _ := net.Listen("tcp", "localhost:9000")
 	defer ln.Close()
 	
@@ -124,11 +123,10 @@ func main(){
 func send(result string)string {
 	conn, _ := net.Dial("tcp", "localhost:9002")
     defer conn.Close()
-    fmt.Print(result)
 	fmt.Fprintf(conn, "%d\n", result) //envia la cadena concatenada al nodo02
 	
 	completeResult := returnRes(conn) //se obtiene los resultados finales
-
+	
 	return completeResult
 }
 

@@ -2,19 +2,15 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
-
-	//"strconv"
+	"io/ioutil"
+	"fmt"
+	"strconv"
 	"bufio"
-	//"io"
-	//"net/http"
-	"net"
 	"strings"
-	//"time"
+	"net"
 )
 
 //estructura
@@ -24,12 +20,8 @@ type Data struct {
 }
 
 var datos []Data
-
-//var arrResult []float64
 var altura string
 var hora string
-
-//var direccion_nodo string
 
 func main() {
 
@@ -38,22 +30,8 @@ func main() {
 		{150.0, 5000},
 		{130.5, 4000}}
 
-	//conexion
-
 	handleResquest()
-
-	//direccion_nodo = "localhost:9000"
-	conn, _ := net.Dial("tcp", "localhost:9000")
-	defer conn.Close()
-
-	allDate := altura + "," + hora //concatenamos los datos recibidos
-	fmt.Fprintf(conn, allDate)     //envia el string al nodo01
-	// for {
-	// 	con, _ := ln1.Accept()
-	// 	go obtenerData(con)
-	// }
-	obtenerData(conn)
-
+	
 }
 
 func handleResquest() {
@@ -64,7 +42,7 @@ func handleResquest() {
 	log.Fatal(http.ListenAndServe(":9001", nil))
 }
 
-func getAll(res http.ResponseWriter, req *http.Request) {
+func getAll(res http.ResponseWriter, req *http.Request){
 	res.Header().Set("Content-Type", "application/json")
 	//serializacion
 	jsonBytes, _ := json.MarshalIndent(datos, "", " ")
@@ -75,7 +53,7 @@ func pushResult(res http.ResponseWriter, req *http.Request) {
 	var consulta Data
 
 	reqBody, err := ioutil.ReadAll(req.Body)
-	if err != nil {
+	if err != nil{
 		fmt.Fprintf(res, "Inserte datos validos")
 	}
 
@@ -95,29 +73,27 @@ func getResult(res http.ResponseWriter, req *http.Request) {
 	fmt.Println(altura)
 	fmt.Println(hora)
 
-	//sendResult(con, alturaData, horaData)
+	conn, _ := net.Dial("tcp", "localhost:9000")
+	defer conn.Close()
+	allDate := altura + "," + hora
+	fmt.Fprintf(conn, "%s\n", allDate)
+	
+	obtenerData(conn)
 
 	res.Header().Set("Content-Type", "application/json")
 }
 
-func obtenerData(con net.Conn) {
-	//defer con.Close()
-	//sendResult(con)
-	r := bufio.NewReader(con)
+func obtenerData(con net.Conn){
+ 	r := bufio.NewReader(con)
 	respuesta, _ := r.ReadString('\n')
 	resp := strings.Split(respuesta, ",")
-	// val, err := strconv.ParseFloat(strings.ReplaceAll(resp,"\r\n",""), 64)
-	// if err != nil{
-	// 	fmt.Println("Error: ", err)
-	// }
 
-	//arrResult = append(arrResult, val)
-	fmt.Println(resp)
-}
+	muestra1 := strings.Split(resp[0], "=")
+	muestra2 := strings.Split(resp[1], ")")
 
-func sendResult(conn net.Conn) {
-
-	allDate := altura + "," + hora
-
-	fmt.Fprintf(conn, allDate)
+	horaF, _ := strconv.ParseFloat(strings.ReplaceAll(hora,"\r\n",""), 64)
+	calcMin := horaF / 60
+ 
+	 fmt.Println("Con una altura de ", altura, " el peso ideal es ", muestra1[3], "kg")
+	 fmt.Println("Haciendo caminata por ", calcMin, " minutos, se quema ", muestra2[0], " cal.")
 }
